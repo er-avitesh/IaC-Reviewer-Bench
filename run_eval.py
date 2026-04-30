@@ -55,13 +55,13 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 
 PRICE_USD_PER_1K = {
-    "gpt-5.5":          {"in": 0.0050, "out": 0.0150},
+    "gpt-4o":           {"in": 0.0050, "out": 0.0150},
     "claude-sonnet-4.6":{"in": 0.0030, "out": 0.0150},
     "gemini-2.5-pro":   {"in": 0.00125, "out": 0.00500},
 }
 
 MODEL_REGISTRY: Dict[str, Dict[str, str]] = {
-    "gpt-5.5":            {"provider": "openai",    "name": "gpt-5.5"},
+    "gpt-4o":             {"provider": "openai",    "name": "gpt-4o"},
     "claude-sonnet-4.6":  {"provider": "anthropic", "name": "claude-sonnet-4-6"},
     "gemini-2.5-pro":     {"provider": "google",    "name": "gemini-2.5-pro"},
 }
@@ -238,26 +238,37 @@ def _price_for(model_key: str, in_tok: int, out_tok: int) -> float:
 
 
 def call_openai(model_name: str, prompt: str, model_key: str) -> CallResult:
-    from openai import OpenAI  # type: ignore
+    from openai import OpenAI
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
     t0 = time.time()
     try:
         resp = client.chat.completions.create(
             model=model_name,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": SYSTEM_PRELUDE},
+                {"role": "user", "content": prompt},
+            ],
             temperature=0.1,
-            response_format={"type": "json_object"},
+            max_tokens=2048,
         )
+
         latency = time.time() - t0
+
         text = resp.choices[0].message.content or ""
+
         usage = getattr(resp, "usage", None)
-        in_tok  = getattr(usage, "prompt_tokens", 0) or 0
+        in_tok = getattr(usage, "prompt_tokens", 0) or 0
         out_tok = getattr(usage, "completion_tokens", 0) or 0
+
         return CallResult(
-            text=text, input_tokens=in_tok, output_tokens=out_tok,
+            text=text,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
             cost_usd=_price_for(model_key, in_tok, out_tok),
             latency_sec=latency,
         )
+
     except Exception as exc:
         return CallResult(error=str(exc), latency_sec=time.time() - t0)
 
@@ -292,28 +303,34 @@ def call_anthropic(model_name: str, prompt: str, model_key: str) -> CallResult:
 
 
 def call_google(model_name: str, prompt: str, model_key: str) -> CallResult:
-    import google.generativeai as genai  # type: ignore
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    from google import genai
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
     t0 = time.time()
     try:
-        model = genai.GenerativeModel(
-            model_name,
-            generation_config={
-                "temperature": 0.1,
-                "response_mime_type": "application/json",
-            },
+        resp = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
         )
-        resp = model.generate_content(prompt)
+
         latency = time.time() - t0
-        text = getattr(resp, "text", "") or ""
+
+        text = ""
+        if resp.text:
+            text = resp.text
+
         usage = getattr(resp, "usage_metadata", None)
-        in_tok  = getattr(usage, "prompt_token_count", 0) or 0
+        in_tok = getattr(usage, "prompt_token_count", 0) or 0
         out_tok = getattr(usage, "candidates_token_count", 0) or 0
+
         return CallResult(
-            text=text, input_tokens=in_tok, output_tokens=out_tok,
+            text=text,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
             cost_usd=_price_for(model_key, in_tok, out_tok),
             latency_sec=latency,
         )
+
     except Exception as exc:
         return CallResult(error=str(exc), latency_sec=time.time() - t0)
 
