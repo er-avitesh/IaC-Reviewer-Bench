@@ -47,7 +47,7 @@ import tempfile
 import time
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -91,43 +91,64 @@ CANONICAL_CLASSES = [
     "missing_tls_for_ingress",
     "expensive_oversized_resource",
     "data_transfer_anti_pattern",
+    "low_signal_misc",
 ]
+
+
 
 # Heuristic mapping table. Real builds should hand-curate a richer mapping;
 # this table is enough to bootstrap and is referenced in the paper as the
 # canonical ontology.
-RULE_PREFIX_TO_CLASS: List[Tuple[str, str]] = [
-    # Checkov rule IDs are typically CKV_<provider>_<num>; map by description fragments.
-    ("encryption", "encryption_at_rest_missing"),
-    ("kms", "weak_kms_or_key_policy"),
-    ("public", "public_object_storage"),
+RULE_PREFIX_TO_CLASS = [
+    # Networking FIRST (higher priority)
     ("0.0.0.0/0", "permissive_security_group"),
+    ("security group", "permissive_security_group"),
     ("ssh", "permissive_security_group"),
     ("rdp", "permissive_security_group"),
+
+    # Storage (specific terms only)
+    ("s3", "public_object_storage"),
+    ("bucket", "public_object_storage"),
+    ("public acl", "public_object_storage"),
+    ("public access block", "public_object_storage"),
+
+    # Encryption
+    ("encryption", "encryption_at_rest_missing"),
+    ("kms", "weak_kms_or_key_policy"),
+
+    # Logging
     ("logging", "missing_logging_audit"),
-    ("audit", "missing_logging_audit"),
+
+    # Versioning
     ("versioning", "missing_versioning_backup"),
-    ("backup", "missing_versioning_backup"),
-    ("secret", "hardcoded_secrets"),
-    ("password", "hardcoded_secrets"),
-    ("iam", "iam_overly_permissive"),
-    ("root", "iam_root_or_admin_use"),
-    ("admin", "iam_root_or_admin_use"),
-    ("rbac", "permissive_rbac"),
-    ("network policy", "missing_network_policy"),
-    ("networkpolicy", "missing_network_policy"),
-    ("privileged", "privileged_container"),
-    ("hostpath", "privileged_container"),
-    ("limits", "missing_resource_limits"),
-    ("requests", "missing_resource_limits"),
-    ("podsecurity", "missing_pod_security"),
-    ("image tag", "missing_image_scan_or_pin"),
-    ("latest", "missing_image_scan_or_pin"),
-    ("tls", "missing_tls_for_ingress"),
-    ("https", "encryption_in_transit_missing"),
-    ("instance type", "expensive_oversized_resource"),
-    ("nat gateway", "data_transfer_anti_pattern"),
 ]
+
+RULE_ID_MAP = {
+    # --- Security group ---
+    "AVD-AWS-0107": "permissive_security_group",
+    "AWS-0107": "permissive_security_group",
+
+    # --- S3 public exposure ---
+    "AVD-AWS-0092": "public_object_storage",
+    "AWS-0092": "public_object_storage",
+    "AVD-AWS-0093": "public_object_storage",
+    "AWS-0093": "public_object_storage",
+    "AVD-AWS-0094": "public_object_storage",
+    "AWS-0094": "public_object_storage",
+
+    # --- Encryption ---
+    "AVD-AWS-0088": "encryption_at_rest_missing",
+    "AWS-0132": "encryption_at_rest_missing",
+    "AVD-AWS-0132": "encryption_at_rest_missing",
+
+    # --- Logging ---
+    "AVD-AWS-0089": "missing_logging_audit",
+    "AWS-0089": "missing_logging_audit",
+
+    # --- Versioning ---
+    "AVD-AWS-0090": "missing_versioning_backup",
+    "AWS-0090": "missing_versioning_backup",
+}
 
 # Canonical class to (PCI DSS, NIST 800-53) seed mappings. These are
 # defaults; the curated table on disk overrides where present.
@@ -182,6 +203,7 @@ class Finding:
     canonical_class: Optional[str] = None
     pci_controls: List[str] = field(default_factory=list)
     nist_controls: List[str] = field(default_factory=list)
+    merged_scanners: List[str] = field(default_factory=list)
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -327,7 +349,13 @@ def _safe_json(text: str) -> Any:
 
 def scan_with_checkov(path: str, iac_type: str) -> List[Finding]:
     framework = "helm" if iac_type == "helm" else "terraform"
-    out = run_cmd(["checkov", "-d", path, "--framework", framework,
+    checkov_cmd = shutil.which("checkov") or shutil.which("checkov.cmd")
+
+    if not checkov_cmd:
+        LOG.warning("Checkov not found in PATH")
+        return []
+
+    out = run_cmd([checkov_cmd, "-d", path, "--framework", framework,
                    "--output", "json", "--quiet", "--soft-fail"])
     data = _safe_json(out)
     findings: List[Finding] = []
@@ -443,11 +471,43 @@ def scan_with_kics(path: str, work_root: Path) -> List[Finding]:
 # ---------------------------------------------------------------------------
 
 def map_rule_to_canonical(message: str, rule_id: str = "") -> Optional[str]:
-    blob = f"{rule_id} {message}".lower()
-    for needle, klass in RULE_PREFIX_TO_CLASS:
-        if needle in blob:
-            return klass
-    return None
+    rid = (rule_id or "").upper()
+
+    # 1. Rule-based mapping (deterministic)
+    if rid in RULE_ID_MAP:
+        return RULE_ID_MAP[rid]
+
+    # 2. Message-based fallback
+    blob = message.lower()
+
+    # --- HIGH PRECISION FIRST ---
+
+    # Networking
+    if "0.0.0.0/0" in blob or "security group" in blob:
+        return "permissive_security_group"
+
+    # Encryption
+    if "encryption" in blob or "kms" in blob:
+        return "encryption_at_rest_missing"
+
+    # Logging
+    if "logging" in blob:
+        return "missing_logging_audit"
+
+    # Versioning
+    if "versioning" in blob:
+        return "missing_versioning_backup"
+
+    # --- STORAGE ONLY IF PUBLIC ---
+    if "public acl" in blob or "public access" in blob:
+        return "public_object_storage"
+
+    # --- PUBLIC READ (e.g. CKV_AWS_20) ---
+    if "public read" in blob:
+        return "public_object_storage"
+
+    # --- LOW SIGNAL ---
+    return "low_signal_misc"
 
 
 def attach_controls(finding: Finding) -> None:
@@ -459,26 +519,30 @@ def attach_controls(finding: Finding) -> None:
     finding.nist_controls = list(mapping.get("nist", []))
 
 
+def normalize_resource(resource: str) -> str:
+    if not resource:
+        return ""
+    r = resource.lower()
+    if "terraform security check" in r:
+        return "terraform_generic"
+    if "." in r:
+        return r.split(".")[0]  # aws_s3_bucket.bad → aws_s3_bucket
+    return r
+
+
 def dedupe_findings(findings: List[Finding]) -> List[Finding]:
-    """Merge findings across scanners by (canonical_class, resource, file_path)."""
-    bucket: Dict[Tuple[str, str, str], Finding] = {}
+    """Merge findings across scanners by canonical_class only."""
+    bucket: Dict[str, Finding] = {}
     for f in findings:
-        key = (
-            f.canonical_class or f.rule_id,
-            f.resource.split(".")[-1] if f.resource else "",
-            os.path.basename(f.file_path or ""),
-        )
+        key = f.canonical_class
         existing = bucket.get(key)
-        if existing is None:
+        if existing:
+            if _severity_rank(f.severity) > _severity_rank(existing.severity):
+                existing.severity = f.severity
+            existing.merged_scanners = list(set(existing.merged_scanners + [f.scanner]))
+        else:
+            f.merged_scanners = [f.scanner]
             bucket[key] = f
-            continue
-        # Merge: keep highest severity and aggregate scanner names.
-        if _severity_rank(f.severity) > _severity_rank(existing.severity):
-            existing.severity = f.severity
-        existing.raw.setdefault("merged_scanners", set())
-        existing.raw["merged_scanners"] = sorted(
-            set(existing.raw.get("merged_scanners", set())) | {existing.scanner, f.scanner}
-        )
     return list(bucket.values())
 
 
@@ -526,10 +590,7 @@ def scan_module(module: ModuleRef, work_root: Path) -> Dict[str, Any]:
 
 def serialize_finding(f: Finding) -> Dict[str, Any]:
     d = asdict(f)
-    # Remove raw to keep manifest small; keep merged_scanners summary.
-    raw = d.pop("raw", {}) or {}
-    if isinstance(raw, dict) and "merged_scanners" in raw:
-        d["merged_scanners"] = list(raw["merged_scanners"])
+    d.pop("raw", None)
     return d
 
 
