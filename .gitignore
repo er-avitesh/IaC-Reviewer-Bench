@@ -1,0 +1,53 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+*.so
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Dataset / output artifacts
+*.jsonl
+*.csv
+*.parquet
+results/
+output/
+data/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
