@@ -125,14 +125,15 @@ def extract_iac_snippet(module_path: str, iac_type: str) -> str:
 # ---------------------------------------------------------------------------
 
 CANONICAL_TAXONOMY_HINT = """\
-Use one of the following canonical misconfiguration classes when classifying:
-encryption_at_rest_missing, encryption_in_transit_missing, public_object_storage,
-permissive_security_group, public_compute_endpoint, iam_overly_permissive,
-iam_root_or_admin_use, missing_logging_audit, missing_versioning_backup,
-hardcoded_secrets, weak_kms_or_key_policy, missing_resource_limits,
-missing_network_policy, permissive_rbac, privileged_container,
-missing_pod_security, missing_image_scan_or_pin, missing_tls_for_ingress,
-expensive_oversized_resource, data_transfer_anti_pattern.
+You MUST set misconfig_class to exactly one of the following canonical classes (no other values):
+public_object_storage, permissive_security_group, encryption_at_rest_missing,
+encryption_in_transit_missing, missing_logging_audit, missing_versioning_backup,
+iam_overly_permissive, iam_root_or_admin_use, hardcoded_secrets,
+weak_kms_or_key_policy, missing_resource_limits, missing_network_policy,
+permissive_rbac, privileged_container, missing_pod_security,
+missing_image_scan_or_pin, missing_tls_for_ingress, public_compute_endpoint,
+expensive_oversized_resource, data_transfer_anti_pattern, low_signal_misc.
+You MUST set the resource field to the exact Terraform resource type from the code (e.g., aws_s3_bucket, aws_security_group, aws_instance). Do not use generic labels.
 """
 
 SYSTEM_PRELUDE = (

@@ -1,0 +1,390 @@
+{
+  "models": {
+    "gpt-4o": {
+      "task1": {
+        "n_modules": 10,
+        "macro": {
+          "precision": 0.18604651162790697,
+          "recall": 0.8888888888888888,
+          "f1": 0.3076923076923077,
+          "tp": 8,
+          "fp": 35,
+          "fn": 1
+        },
+        "resource_level": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 45,
+          "fn": 9
+        },
+        "per_class": {
+          "encryption_at_rest_missing": {
+            "precision": 0.14285714285714285,
+            "recall": 1.0,
+            "f1": 0.25,
+            "tp": 1,
+            "fp": 6,
+            "fn": 0
+          },
+          "iam_overly_permissive": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 5,
+            "fn": 0
+          },
+          "low_signal_misc": {
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1": 0.8571428571428571,
+            "tp": 6,
+            "fp": 2,
+            "fn": 0
+          },
+          "missing_logging_audit": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 6,
+            "fn": 1
+          },
+          "permissive_security_group": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "missing_versioning_backup": {
+            "precision": 0.125,
+            "recall": 1.0,
+            "f1": 0.2222222222222222,
+            "tp": 1,
+            "fp": 7,
+            "fn": 0
+          },
+          "weak_kms_or_key_policy": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "hardcoded_secrets": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "public_object_storage": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "encryption_in_transit_missing": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          }
+        },
+        "cost_total_usd": 0.18194499999999997,
+        "cost_per_true_finding_usd": 0.022743124999999996
+      },
+      "task2": {
+        "n_alerts_scored": 73,
+        "exact_accuracy": 0.2328767123287671,
+        "true_positive_recall": 1.0,
+        "false_positive_suppression_rate": 0.4492753623188406,
+        "confusion": {
+          "TRUE_POSITIVE__as__TRUE_POSITIVE": 4,
+          "DUPLICATE__as__TRUE_POSITIVE": 15,
+          "FALSE_POSITIVE__as__OUT_OF_SCOPE": 9,
+          "DUPLICATE__as__OUT_OF_SCOPE": 1,
+          "FALSE_POSITIVE__as__DUPLICATE": 18,
+          "DUPLICATE__as__DUPLICATE": 12,
+          "FALSE_POSITIVE__as__TRUE_POSITIVE": 13,
+          "FALSE_POSITIVE__as__FALSE_POSITIVE": 1
+        },
+        "cost_total_usd": 0.256185
+      },
+      "task3": {
+        "pci_strict_accuracy": 0.3333333333333333,
+        "pci_relaxed_accuracy": 0.3333333333333333,
+        "nist_strict_accuracy": 0.3333333333333333,
+        "nist_relaxed_accuracy": 0.3333333333333333,
+        "n_findings_scored": 9,
+        "cost_total_usd": 0.032490000000000005
+      }
+    },
+    "claude-sonnet-4.6": {
+      "task1": {
+        "n_modules": 10,
+        "macro": {
+          "precision": 0.14285714285714285,
+          "recall": 0.8888888888888888,
+          "f1": 0.24615384615384617,
+          "tp": 8,
+          "fp": 48,
+          "fn": 1
+        },
+        "resource_level": {
+          "precision": 0.0125,
+          "recall": 0.1111111111111111,
+          "f1": 0.022471910112359553,
+          "tp": 1,
+          "fp": 79,
+          "fn": 8
+        },
+        "per_class": {
+          "encryption_at_rest_missing": {
+            "precision": 0.125,
+            "recall": 1.0,
+            "f1": 0.2222222222222222,
+            "tp": 1,
+            "fp": 7,
+            "fn": 0
+          },
+          "weak_kms_or_key_policy": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 8,
+            "fn": 0
+          },
+          "missing_versioning_backup": {
+            "precision": 0.1111111111111111,
+            "recall": 1.0,
+            "f1": 0.19999999999999998,
+            "tp": 1,
+            "fp": 8,
+            "fn": 0
+          },
+          "low_signal_misc": {
+            "precision": 0.7142857142857143,
+            "recall": 0.8333333333333334,
+            "f1": 0.7692307692307692,
+            "tp": 5,
+            "fp": 2,
+            "fn": 1
+          },
+          "missing_logging_audit": {
+            "precision": 0.1,
+            "recall": 1.0,
+            "f1": 0.18181818181818182,
+            "tp": 1,
+            "fp": 9,
+            "fn": 0
+          },
+          "iam_overly_permissive": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 6,
+            "fn": 0
+          },
+          "public_object_storage": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 0
+          },
+          "encryption_in_transit_missing": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "permissive_security_group": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 0
+          },
+          "hardcoded_secrets": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          }
+        },
+        "cost_total_usd": 0.4472879999999999,
+        "cost_per_true_finding_usd": 0.05591099999999999
+      },
+      "task2": {
+        "n_alerts_scored": 81,
+        "exact_accuracy": 0.35802469135802467,
+        "true_positive_recall": 1.0,
+        "false_positive_suppression_rate": 0.6233766233766234,
+        "confusion": {
+          "TRUE_POSITIVE__as__TRUE_POSITIVE": 4,
+          "DUPLICATE__as__TRUE_POSITIVE": 14,
+          "FALSE_POSITIVE__as__TRUE_POSITIVE": 15,
+          "FALSE_POSITIVE__as__DUPLICATE": 19,
+          "DUPLICATE__as__DUPLICATE": 17,
+          "DUPLICATE__as__FALSE_POSITIVE": 4,
+          "FALSE_POSITIVE__as__FALSE_POSITIVE": 8
+        },
+        "cost_total_usd": 0.322359
+      },
+      "task3": {
+        "pci_strict_accuracy": 0.0,
+        "pci_relaxed_accuracy": 0.42857142857142855,
+        "nist_strict_accuracy": 0.0,
+        "nist_relaxed_accuracy": 0.42857142857142855,
+        "n_findings_scored": 7,
+        "cost_total_usd": 0.117153
+      }
+    },
+    "gemini-2.5-pro": {
+      "task1": {
+        "n_modules": 10,
+        "macro": {
+          "precision": 0.043478260869565216,
+          "recall": 0.1111111111111111,
+          "f1": 0.0625,
+          "tp": 1,
+          "fp": 22,
+          "fn": 8
+        },
+        "resource_level": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "tp": 0,
+          "fp": 25,
+          "fn": 9
+        },
+        "per_class": {
+          "encryption_at_rest_missing": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 1
+          },
+          "weak_kms_or_key_policy": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 4,
+            "fn": 0
+          },
+          "missing_versioning_backup": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 4,
+            "fn": 1
+          },
+          "low_signal_misc": {
+            "precision": 0.3333333333333333,
+            "recall": 0.16666666666666666,
+            "f1": 0.2222222222222222,
+            "tp": 1,
+            "fp": 2,
+            "fn": 5
+          },
+          "missing_logging_audit": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 1
+          },
+          "iam_overly_permissive": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "hardcoded_secrets": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "permissive_security_group": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 2,
+            "fn": 0
+          },
+          "public_object_storage": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          }
+        },
+        "cost_total_usd": 0.047203,
+        "cost_per_true_finding_usd": 0.047203
+      },
+      "task2": {
+        "n_alerts_scored": 31,
+        "exact_accuracy": 0.3870967741935484,
+        "true_positive_recall": 1.0,
+        "false_positive_suppression_rate": 0.4482758620689655,
+        "confusion": {
+          "TRUE_POSITIVE__as__TRUE_POSITIVE": 2,
+          "DUPLICATE__as__TRUE_POSITIVE": 15,
+          "FALSE_POSITIVE__as__TRUE_POSITIVE": 1,
+          "FALSE_POSITIVE__as__DUPLICATE": 3,
+          "DUPLICATE__as__DUPLICATE": 10
+        },
+        "cost_total_usd": 0.042584
+      },
+      "task3": {
+        "pci_strict_accuracy": 0.0,
+        "pci_relaxed_accuracy": 0.42857142857142855,
+        "nist_strict_accuracy": 0.0,
+        "nist_relaxed_accuracy": 0.42857142857142855,
+        "n_findings_scored": 7,
+        "cost_total_usd": 0.014922000000000001
+      }
+    }
+  },
+  "agreement": {
+    "pairwise_cohens_kappa": {
+      "gpt-4o__vs__claude-sonnet-4.6": 0.6349244471129786,
+      "gpt-4o__vs__gemini-2.5-pro": 0.3994030578059323,
+      "claude-sonnet-4.6__vs__gemini-2.5-pro": 0.42071051776294477
+    },
+    "fleiss_kappa": 0.5012365107913657
+  }
+}

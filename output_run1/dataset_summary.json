@@ -1,0 +1,11 @@
+{
+  "n_modules": 5,
+  "by_source": {
+    "aws_samples": 5
+  },
+  "by_iac_type": {
+    "terraform": 5
+  },
+  "total_raw_findings": 277,
+  "total_canonical_findings": 8
+}

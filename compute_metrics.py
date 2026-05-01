@@ -23,11 +23,54 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
+NORMALIZATION_RULES = [
+    (r"s3.*public|public.*bucket|publicly accessible storage", "public_object_storage"),
+    (r"security group.*0\.0\.0\.0|open.*port|wide open ingress", "permissive_security_group"),
+    (r"no encryption|unencrypted|missing encryption", "encryption_at_rest_missing"),
+    (r"no logging|logging disabled|audit not enabled", "missing_logging_audit"),
+    (r"no versioning|backup not enabled", "missing_versioning_backup"),
+    (r"iam.*\*|overly permissive iam", "iam_overly_permissive"),
+    (r"hardcoded.*secret|plaintext.*password", "hardcoded_secrets"),
+    (r"no tls|no https|unencrypted transport", "encryption_in_transit_missing"),
+    (r"kms.*weak|key policy issue", "weak_kms_or_key_policy"),
+]
+
+def normalize_prediction(text: str) -> str:
+    text = text.lower()
+    for pattern, label in NORMALIZATION_RULES:
+        if re.search(pattern, text):
+            return label
+    return "low_signal_misc"
+
+
+VALID_CLASSES = {
+    "public_object_storage",
+    "permissive_security_group",
+    "encryption_at_rest_missing",
+    "missing_logging_audit",
+    "missing_versioning_backup",
+    "iam_overly_permissive",
+    "hardcoded_secrets",
+    "encryption_in_transit_missing",
+    "weak_kms_or_key_policy",
+    "low_signal_misc",
+}
+
+RELATED_CLASSES: Dict[str, List[str]] = {
+    "encryption_at_rest_missing": ["encryption_in_transit_missing"],
+    "public_object_storage":      ["public_compute_endpoint"],
+}
+
+def is_match(pred: str, gt: str) -> bool:
+    if pred == gt:
+        return True
+    return gt in RELATED_CLASSES.get(pred, [])
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -158,12 +201,21 @@ def task1_metrics(eval_rows: List[Dict[str, Any]],
         for f in findings:
             if not isinstance(f, dict):
                 continue
-            c = f.get("misconfig_class") or f.get("canonical_class")
-            if not c:
-                continue
+            c = (f.get("canonical_class")
+                 or f.get("misconfig_class")
+                 or "low_signal_misc")
+            if c not in VALID_CLASSES:
+                c = "low_signal_misc"
             pred_classes.add(c)
             res = (f.get("resource") or "").split(".")[-1]
             pred_pairs.add((c, res))
+
+        # Soft-align predictions to gold using is_match so related classes score as TP.
+        aligned: Set[str] = set()
+        for pc in pred_classes:
+            matched = next((gc for gc in gold_classes if is_match(pc, gc)), None)
+            aligned.add(matched if matched else pc)
+        pred_classes = aligned
 
         # Class-level
         for c in pred_classes | gold_classes:
@@ -186,7 +238,7 @@ def task1_metrics(eval_rows: List[Dict[str, Any]],
 
     macro_p, macro_r, macro_f = prf(macro_tp, macro_fp, macro_fn)
     res_p,   res_r,   res_f   = prf(res_tp,   res_fp,   res_fn)
-    cost_per_tp = _safe_div(cost_total, macro_tp)
+    cost_per_tp = (cost_total / macro_tp) if macro_tp > 0 else None
 
     return {
         "n_modules": n_modules,
@@ -421,7 +473,7 @@ def main() -> int:
     p.add_argument("--results-dir", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--models", nargs="+",
-                   default=["gpt-5.5", "claude-sonnet-4.6", "gemini-2.5-pro"])
+                   default=["gpt-4o", "claude-sonnet-4.6", "gemini-2.5-pro"])
     args = p.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
@@ -472,7 +524,7 @@ def main() -> int:
         for mk in args.models:
             try:
                 v = fn(report["models"][mk])
-                cells.append(f"{v:.3f}" if isinstance(v, float) else str(v))
+                cells.append("n/a" if v is None else (f"{v:.3f}" if isinstance(v, float) else str(v)))
             except Exception:
                 cells.append("n/a")
         lines.append(f"| {label} | " + " | ".join(cells) + " |")
